@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FF1A1A2E">
+
+    <!-- 标题栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="#FF16213E"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📡 BLE防丢器监控"
+            android:textColor="#FFFFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- 控制卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FF0F3460"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="扫描控制"
+                    android:textColor="#FF4FC3F7"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Company ID: 0x"
+                        android:textColor="#FFB0BEC5"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/etCompanyId"
+                        android:layout_width="90dp"
+                        android:layout_height="36dp"
+                        android:text="ABCD"
+                        android:textColor="#FFFFFFFF"
+                        android:background="#FF1A1A2E"
+                        android:textSize="14sp"
+                        android:fontFamily="monospace"
+                        android:paddingHorizontal="8dp"
+                        android:inputType="text"
+                        android:maxLines="1"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="10dp">
+                    <Button
+                        android:id="@+id/btnScan"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="开始扫描"
+                        android:textColor="#FFFFFFFF"
+                        android:textStyle="bold"
+                        android:backgroundTint="#FF1976D2"
+                        android:layout_marginEnd="8dp"/>
+                    <Button
+                        android:id="@+id/btnClear"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="清空列表"
+                        android:textColor="#FFFFFFFF"
+                        android:backgroundTint="#FF455A64"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="请点击"开始扫描""
+                    android:textColor="#FFFFEB3B"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- 统计栏 -->
+            <TextView
+                android:id="@+id/tvScanCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="共 0 个TAG  |  在线 0  |  离线 0"
+                android:textColor="#FF90A4AE"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- 空状态 -->
+            <TextView
+                android:id="@+id/tvEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:text="暂未检测到TAG信号\n请确保TAG已开机并在附近"
+                android:textColor="#FF78909C"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:visibility="visible"/>
+
+            <!-- TAG列表容器 -->
+            <LinearLayout
+                android:id="@+id/llTagContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- 信号说明 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FF0F3460"
+                android:padding="16dp"
+                android:layout_marginTop="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="信号强度参考"
+                    android:textColor="#FF4FC3F7"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-50 dBm 以上 → 非常近（1m内）\n-70 dBm → 较近（约3m）\n-85 dBm → 较远（约5-10m）\n低于 -90 dBm → 接近失联范围"
+                    android:textColor="#FFB0BEC5"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="4dp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
