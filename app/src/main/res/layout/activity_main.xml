@@ -15,7 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="BLE Anti-Lost Monitor"
+            android:text="BLE 防丢器监控"
             android:textColor="#FFFFFFFF"
             android:textSize="20sp"
             android:textStyle="bold"/>
@@ -41,7 +41,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Scan Control"
+                    android:text="扫描控制"
                     android:textColor="#FF4FC3F7"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -84,7 +84,7 @@
                         android:layout_width="0dp"
                         android:layout_height="44dp"
                         android:layout_weight="1"
-                        android:text="Start Scan"
+                        android:text="开始扫描"
                         android:textColor="#FFFFFFFF"
                         android:textStyle="bold"
                         android:backgroundTint="#FF1976D2"
@@ -94,26 +94,42 @@
                         android:layout_width="0dp"
                         android:layout_height="44dp"
                         android:layout_weight="1"
-                        android:text="Clear List"
+                        android:text="清空列表"
                         android:textColor="#FFFFFFFF"
                         android:backgroundTint="#FF455A64"/>
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnBackground"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:text="Background Scan: OFF"
-                    android:textColor="#FFFFFFFF"
-                    android:textStyle="bold"
-                    android:backgroundTint="#FF455A64"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="10dp">
+                    <Button
+                        android:id="@+id/btnBackground"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="后台扫描：关闭"
+                        android:textColor="#FFFFFFFF"
+                        android:textStyle="bold"
+                        android:backgroundTint="#FF455A64"
+                        android:layout_marginRight="8dp"/>
+                    <Button
+                        android:id="@+id/btnNotif"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="报警通知：开启"
+                        android:textColor="#FFFFFFFF"
+                        android:textStyle="bold"
+                        android:backgroundTint="#FF1565C0"/>
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Press Start Scan to begin"
+                    android:text="请点击开始扫描"
                     android:textColor="#FFFFEB3B"
                     android:textSize="13sp"/>
             </LinearLayout>
@@ -122,7 +138,7 @@
                 android:id="@+id/tvScanCount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Total: 0  |  Online: 0  |  Offline: 0"
+                android:text="共 0 个TAG  |  在线 0  |  离线 0"
                 android:textColor="#FF90A4AE"
                 android:textSize="13sp"
                 android:gravity="center"
@@ -132,7 +148,7 @@
                 android:id="@+id/tvEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
-                android:text="No TAG signal detected"
+                android:text="暂未检测到TAG信号"
                 android:textColor="#FF78909C"
                 android:textSize="14sp"
                 android:gravity="center"
@@ -154,7 +170,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Signal Reference"
+                    android:text="信号强度参考"
                     android:textColor="#FF4FC3F7"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -162,7 +178,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Above -50 dBm: Very close (within 1m)\n-70 dBm: Near (about 3m)\n-85 dBm: Far (about 5-10m)\nBelow -90 dBm: Near lost range"
+                    android:text="-50 dBm 以上：非常近（1m内）\n-70 dBm：较近（约3m）\n-85 dBm：较远（约5-10m）\n低于 -90 dBm：接近失联范围"
                     android:textColor="#FFB0BEC5"
                     android:textSize="13sp"
                     android:lineSpacingExtra="4dp"/>
