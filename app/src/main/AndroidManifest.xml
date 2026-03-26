@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
@@ -19,6 +21,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -27,5 +30,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".BleScanService"
+            android:foregroundServiceType="connectedDevice"
+            android:exported="false"/>
+
     </application>
 </manifest>
