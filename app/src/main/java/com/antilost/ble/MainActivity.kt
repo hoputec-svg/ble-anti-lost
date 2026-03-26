@@ -36,30 +36,24 @@ class BleScanService : Service() {
         const val CHANNEL_FG = "ble_foreground"
         var isRunning = false
     }
-
     override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onCreate() {
         super.onCreate()
         isRunning = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(CHANNEL_FG, "Background Scan", NotificationManager.IMPORTANCE_LOW)
+            val ch = NotificationChannel(CHANNEL_FG, "后台扫描", NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
         val notif = NotificationCompat.Builder(this, CHANNEL_FG)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
-            .setContentTitle("BLE Anti-Lost")
-            .setContentText("Background scanning active...")
+            .setContentTitle("BLE防丢器")
+            .setContentText("后台扫描运行中...")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
         startForeground(NOTIF_ID, notif)
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        isRunning = false
-    }
+    override fun onDestroy() { super.onDestroy(); isRunning = false }
 }
 
 // ================================================================
@@ -74,20 +68,28 @@ class MainActivity : AppCompatActivity() {
         const val RSSI_WEAK_THRESHOLD = -85
         const val CHANNEL_ALERT = "ble_antilost"
         const val REQUEST_PERMISSIONS = 100
+        // SharedPreferences keys
+        const val PREF_NAME = "ble_prefs"
+        const val PREF_BG_SCAN = "bg_scan_enabled"
+        const val PREF_NOTIF = "notif_enabled"
+        const val PREF_COMPANY_ID = "company_id"
     }
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private var bleScanner: BluetoothLeScanner? = null
     private var isScanning = false
     private var bgScanEnabled = false
+    private var notifEnabled = true   // 通知开关
     private val tags = mutableMapOf<Int, TagInfo>()
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var vibrator: Vibrator
+    private lateinit var prefs: SharedPreferences
     private var notifId = 2000
 
     private lateinit var btnScan: Button
     private lateinit var btnClear: Button
     private lateinit var btnBackground: Button
+    private lateinit var btnNotif: Button
     private lateinit var tvStatus: TextView
     private lateinit var tvScanCount: TextView
     private lateinit var llTagContainer: LinearLayout
@@ -129,14 +131,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
         btnScan        = findViewById(R.id.btnScan)
         btnClear       = findViewById(R.id.btnClear)
         btnBackground  = findViewById(R.id.btnBackground)
+        btnNotif       = findViewById(R.id.btnNotif)
         tvStatus       = findViewById(R.id.tvStatus)
         tvScanCount    = findViewById(R.id.tvScanCount)
         llTagContainer = findViewById(R.id.llTagContainer)
         tvEmpty        = findViewById(R.id.tvEmpty)
         etCompanyId    = findViewById(R.id.etCompanyId)
+
+        // 恢复上次保存的设置
+        bgScanEnabled = prefs.getBoolean(PREF_BG_SCAN, false)
+        notifEnabled  = prefs.getBoolean(PREF_NOTIF, true)
+        etCompanyId.setText(prefs.getString(PREF_COMPANY_ID, "ABCD"))
 
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -150,7 +160,31 @@ class MainActivity : AppCompatActivity() {
         btnScan.setOnClickListener { if (isScanning) stopScan() else checkPermissionsAndScan() }
         btnClear.setOnClickListener { tags.clear(); refreshUI() }
         btnBackground.setOnClickListener { toggleBackgroundScan() }
+        btnNotif.setOnClickListener { toggleNotif() }
+
         updateBgButton()
+        updateNotifButton()
+
+        // 如果上次后台扫描已开启，自动恢复扫描
+        if (bgScanEnabled && BleScanService.isRunning) {
+            restoreScanning()
+        }
+    }
+
+    // ----------------------------------------------------------------
+    //  后台扫描恢复（从后台回到前台）
+    // ----------------------------------------------------------------
+    private fun restoreScanning() {
+        bleScanner = bluetoothAdapter.bluetoothLeScanner
+        val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+        try {
+            bleScanner?.startScan(null, settings, scanCallback)
+            isScanning = true
+            btnScan.text = "停止扫描"
+            btnScan.setBackgroundColor(0xFFE53935.toInt())
+            tvStatus.text = "扫描中... (0x${etCompanyId.text.toString().uppercase()})"
+            handler.post(refreshRunnable)
+        } catch (_: Exception) {}
     }
 
     // ----------------------------------------------------------------
@@ -158,36 +192,63 @@ class MainActivity : AppCompatActivity() {
     // ----------------------------------------------------------------
     private fun toggleBackgroundScan() {
         if (!isScanning) {
-            Toast.makeText(this, "Please start scanning first", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请先开始扫描", Toast.LENGTH_SHORT).show()
             return
         }
         bgScanEnabled = !bgScanEnabled
+        prefs.edit().putBoolean(PREF_BG_SCAN, bgScanEnabled).apply()
         val intent = Intent(this, BleScanService::class.java)
         if (bgScanEnabled) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
             else startService(intent)
-            Toast.makeText(this, "Background scan ON - app can be minimized", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "后台扫描已开启，可最小化APP", Toast.LENGTH_LONG).show()
         } else {
             stopService(intent)
-            Toast.makeText(this, "Background scan OFF", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "后台扫描已关闭", Toast.LENGTH_SHORT).show()
         }
         updateBgButton()
     }
 
     private fun updateBgButton() {
-        if (bgScanEnabled) {
-            btnBackground.text = "Background Scan: ON"
+        if (bgScanEnabled && BleScanService.isRunning) {
+            btnBackground.text = "后台扫描：开启"
             btnBackground.setBackgroundColor(0xFF2E7D32.toInt())
         } else {
-            btnBackground.text = "Background Scan: OFF"
+            bgScanEnabled = false
+            btnBackground.text = "后台扫描：关闭"
             btnBackground.setBackgroundColor(0xFF455A64.toInt())
+        }
+    }
+
+    // ----------------------------------------------------------------
+    //  通知开关
+    // ----------------------------------------------------------------
+    private fun toggleNotif() {
+        notifEnabled = !notifEnabled
+        prefs.edit().putBoolean(PREF_NOTIF, notifEnabled).apply()
+        updateNotifButton()
+        Toast.makeText(this, if (notifEnabled) "通知已开启" else "通知已关闭", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateNotifButton() {
+        if (notifEnabled) {
+            btnNotif.text = "报警通知：开启"
+            btnNotif.setBackgroundColor(0xFF1565C0.toInt())
+        } else {
+            btnNotif.text = "报警通知：关闭"
+            btnNotif.setBackgroundColor(0xFF455A64.toInt())
         }
     }
 
     override fun onResume() {
         super.onResume()
-        bgScanEnabled = BleScanService.isRunning
         updateBgButton()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // 保存Company ID
+        prefs.edit().putString(PREF_COMPANY_ID, etCompanyId.text.toString()).apply()
     }
 
     // ----------------------------------------------------------------
@@ -203,7 +264,6 @@ class MainActivity : AppCompatActivity() {
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             if (!granted(Manifest.permission.POST_NOTIFICATIONS)) perms.add(Manifest.permission.POST_NOTIFICATIONS)
-
         if (perms.isNotEmpty()) ActivityCompat.requestPermissions(this, perms.toTypedArray(), REQUEST_PERMISSIONS)
         else startScan()
     }
@@ -213,7 +273,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_PERMISSIONS && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) startScan()
-        else tvStatus.text = "Need Bluetooth permission to scan"
+        else tvStatus.text = "需要蓝牙权限才能扫描"
     }
 
     // ----------------------------------------------------------------
@@ -225,21 +285,24 @@ class MainActivity : AppCompatActivity() {
         try {
             bleScanner?.startScan(null, settings, scanCallback)
             isScanning = true
-            btnScan.text = "Stop Scan"
+            btnScan.text = "停止扫描"
             btnScan.setBackgroundColor(0xFFE53935.toInt())
-            tvStatus.text = "Scanning... (0x${etCompanyId.text.toString().uppercase()})"
+            val cid = etCompanyId.text.toString().uppercase()
+            prefs.edit().putString(PREF_COMPANY_ID, cid).apply()
+            tvStatus.text = "扫描中... (0x$cid)"
             handler.post(refreshRunnable)
-        } catch (e: Exception) { tvStatus.text = "Start failed: ${e.message}" }
+        } catch (e: Exception) { tvStatus.text = "启动失败：${e.message}" }
     }
 
     private fun stopScan() {
         try { bleScanner?.stopScan(scanCallback) } catch (_: Exception) {}
         isScanning = false
         bgScanEnabled = false
+        prefs.edit().putBoolean(PREF_BG_SCAN, false).apply()
         stopService(Intent(this, BleScanService::class.java))
-        btnScan.text = "Start Scan"
+        btnScan.text = "开始扫描"
         btnScan.setBackgroundColor(0xFF1976D2.toInt())
-        tvStatus.text = "Stopped"
+        tvStatus.text = "已停止"
         handler.removeCallbacks(refreshRunnable)
         updateBgButton()
     }
@@ -253,25 +316,31 @@ class MainActivity : AppCompatActivity() {
             val lost = (now - tag.lastSeen) >= TAG_TIMEOUT_MS
             if (lost && !tag.notifiedLost) {
                 tag.notifiedLost = true
-                sendAlert("TAG #${tag.tagId.toString(16).uppercase()} Lost!", "No signal for over 10 seconds.")
                 vibratePattern(longArrayOf(0, 400, 200, 400))
+                if (notifEnabled) sendAlert(
+                    "TAG #${tag.tagId.toString(16).uppercase()} 失联！",
+                    "超过10秒未收到信号，请检查设备。"
+                )
             }
             if (!lost && tag.rssi < RSSI_WEAK_THRESHOLD && !tag.notifiedWeak) {
                 tag.notifiedWeak = true
                 vibrateOnce(300L)
-                sendAlert("TAG #${tag.tagId.toString(16).uppercase()} Weak Signal", "RSSI ${tag.rssi} dBm, may be out of range.")
+                if (notifEnabled) sendAlert(
+                    "TAG #${tag.tagId.toString(16).uppercase()} 信号过弱",
+                    "当前信号 ${tag.rssi} dBm，设备可能即将超出范围。"
+                )
             }
         }
         refreshUI()
     }
 
     // ----------------------------------------------------------------
-    //  UI
+    //  UI渲染
     // ----------------------------------------------------------------
     private fun refreshUI() {
         val now = System.currentTimeMillis()
         val onlineCount = tags.values.count { now - it.lastSeen < TAG_TIMEOUT_MS }
-        tvScanCount.text = "Total: ${tags.size}  |  Online: $onlineCount  |  Offline: ${tags.size - onlineCount}"
+        tvScanCount.text = "共 ${tags.size} 个TAG  |  在线 $onlineCount  |  离线 ${tags.size - onlineCount}"
         llTagContainer.removeAllViews()
         if (tags.isEmpty()) { tvEmpty.visibility = View.VISIBLE; return }
         tvEmpty.visibility = View.GONE
@@ -283,13 +352,13 @@ class MainActivity : AppCompatActivity() {
             val card = layoutInflater.inflate(R.layout.item_tag, llTagContainer, false)
             card.findViewById<TextView>(R.id.tvTagId).text = "TAG #${tag.tagId.toString(16).uppercase().padStart(2,'0')}"
             card.findViewById<TextView>(R.id.tvOnline).apply {
-                text = when { !online -> "LOST"; weak -> "WEAK"; else -> "Online" }
+                text = when { !online -> "失联"; weak -> "信号弱"; else -> "在线" }
                 setTextColor(when { !online -> 0xFFF44336.toInt(); weak -> 0xFFFF9800.toInt(); else -> 0xFF4CAF50.toInt() })
             }
-            card.findViewById<TextView>(R.id.tvRssi).text    = "RSSI: ${tag.rssi} dBm"
-            card.findViewById<TextView>(R.id.tvBattery).text = "Battery: ${tag.battery}%"
-            card.findViewById<TextView>(R.id.tvLastSeen).text = if (online) "Last: ${ageSec}s ago" else "Lost: >${ageSec}s"
-            card.findViewById<TextView>(R.id.tvCount).text = "First: ${tag.firstSeen}  Packets: ${tag.count}"
+            card.findViewById<TextView>(R.id.tvRssi).text    = "信号：${tag.rssi} dBm"
+            card.findViewById<TextView>(R.id.tvBattery).text = "电量：${tag.battery}%"
+            card.findViewById<TextView>(R.id.tvLastSeen).text = if (online) "最后：${ageSec}秒前" else "失联：>${ageSec}秒"
+            card.findViewById<TextView>(R.id.tvCount).text = "首次：${tag.firstSeen}  广播：${tag.count}次"
             card.findViewById<ProgressBar>(R.id.pbRssi).progress    = rssiBar
             card.findViewById<ProgressBar>(R.id.pbBattery).progress = tag.battery
             card.setBackgroundColor(when { !online -> 0xFF7F0000.toInt(); weak -> 0xFF4A3000.toInt(); else -> 0xFF1B5E20.toInt() })
@@ -314,8 +383,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun createAlertChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(CHANNEL_ALERT, "TAG Alerts", NotificationManager.IMPORTANCE_HIGH)
-                .apply { description = "Lost and weak signal alerts" }
+            val ch = NotificationChannel(CHANNEL_ALERT, "TAG报警", NotificationManager.IMPORTANCE_HIGH)
+                .apply { description = "失联和信号过弱报警" }
             getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
     }
