@@ -306,10 +306,10 @@ class DeviceAdapter(
     inner class VH(val root: LinearLayout) : RecyclerView.ViewHolder(root) {
         val tvName:    TextView = root.findViewWithTag("name")
         val tvAddr:    TextView = root.findViewWithTag("addr")
-        val tvTemp:    TextView = root.findViewWithTag("temp")
-        val tvHumid:   TextView = root.findViewWithTag("humid")
-        val tvBatt:    TextView = root.findViewWithTag("batt")
-        val tvRssi:    TextView = root.findViewWithTag("rssi")
+        val tvTemp:    LinearLayout = root.findViewWithTag("temp")
+        val tvHumid:   LinearLayout = root.findViewWithTag("humid")
+        val tvBatt:    LinearLayout = root.findViewWithTag("batt")
+        val tvRssi:    LinearLayout = root.findViewWithTag("rssi")
         val tvAlarm:   TextView = root.findViewWithTag("alarm")
         val tvLastSeen:TextView = root.findViewWithTag("lastseen")
         val vSignal:   View     = root.findViewWithTag("signal")
@@ -380,7 +380,7 @@ class DeviceAdapter(
         card.addView(row3)
 
         /* 点击进详情 */
-        card.setOnClickListener { onClick(data[bindingAdapterPosition]) }
+        card.setOnClickListener { onClick(data[adapterPosition]) }
 
         /* 分隔条 */
         val wrapper = LinearLayout(ctx).apply {
@@ -425,10 +425,10 @@ class DeviceAdapter(
         val dev = data[pos]
         holder.tvName.text     = dev.name
         holder.tvAddr.text     = dev.address
-        holder.tvTemp.getChildAt(0).let { (it as TextView).text = dev.tempStr }
-        holder.tvHumid.getChildAt(0).let { (it as TextView).text = dev.humidStr }
-        holder.tvBatt.getChildAt(0).let { (it as TextView).text = "${dev.battPct}%" }
-        holder.tvRssi.getChildAt(0).let { (it as TextView).text = dev.rssiStr }
+        (holder.tvTemp  as LinearLayout).getChildAt(0).let { (it as TextView).text = dev.tempStr }
+        (holder.tvHumid as LinearLayout).getChildAt(0).let { (it as TextView).text = dev.humidStr }
+        (holder.tvBatt  as LinearLayout).getChildAt(0).let { (it as TextView).text = "${dev.battPct}%" }
+        (holder.tvRssi  as LinearLayout).getChildAt(0).let { (it as TextView).text = dev.rssiStr }
         holder.tvLastSeen.text = dev.lastSeenStr
         holder.tvAlarm.visibility = if (dev.alarmFlag) View.VISIBLE else View.GONE
         /* 信号颜色 */
