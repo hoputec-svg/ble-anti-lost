@@ -1,4 +1,4 @@
-package com.antilost.tag
+package com.antilost.ble
 
 import android.Manifest
 import android.app.*
