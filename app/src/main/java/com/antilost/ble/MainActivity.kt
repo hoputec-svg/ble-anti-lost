@@ -204,12 +204,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopScan() {
+        if (!scanning) return
         scanning = false
-        btnScan.text = "扫描"
-        btnScan.setTextColor(Color.parseColor("#58A6FF"))
         bleScanner?.stopScan(scanCallback)
-        tvScanHint.text = if (deviceList.isEmpty()) "" else "找到 ${deviceList.size} 个设备"
-        handler.postDelayed({ tvScanHint.visibility = View.GONE }, 2000)
+        handler.post {
+            btnScan.text = "扫描"
+            btnScan.setTextColor(Color.parseColor("#58A6FF"))
+            tvScanHint.text = if (deviceList.isEmpty()) "未发现设备" else "找到 ${deviceList.size} 个设备"
+            handler.postDelayed({ tvScanHint.visibility = View.GONE }, 2000)
+        }
     }
 
     private val scanCallback = object : ScanCallback() {
@@ -239,10 +242,11 @@ class MainActivity : AppCompatActivity() {
                 deviceList.clear()
                 deviceList.addAll(deviceMap.values.sortedByDescending { it.rssi })
                 adapter?.notifyDataSetChanged()
-                tvEmpty.visibility    = if (deviceList.isEmpty()) View.VISIBLE else View.GONE
-                rvDevices.visibility  = if (deviceList.isEmpty()) View.GONE else View.VISIBLE
+                tvEmpty.visibility   = if (deviceList.isEmpty()) View.VISIBLE else View.GONE
+                rvDevices.visibility = if (deviceList.isEmpty()) View.GONE    else View.VISIBLE
 
                 if (alarm) sendAlarmNotification(name)
+                /* 不在这里停扫描，让用户手动停或等15秒超时 */
             }
         }
     }
