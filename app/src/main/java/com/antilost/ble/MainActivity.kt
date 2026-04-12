@@ -379,8 +379,8 @@ class DeviceAdapter(
         }
         card.addView(row3)
 
-        /* 点击进详情 */
-        card.setOnClickListener { onClick(data[adapterPosition]) }
+        /* 点击进详情 - pos在onBindViewHolder里绑定 */
+        card.setOnClickListener(null)
 
         /* 分隔条 */
         val wrapper = LinearLayout(ctx).apply {
@@ -443,6 +443,8 @@ class DeviceAdapter(
         holder.root.setBackgroundColor(
             if (dev.alarmFlag) Color.parseColor("#1A0808") else Color.parseColor("#161B22")
         )
+        /* 点击跳转 */
+        holder.root.setOnClickListener { onClick(dev) }
     }
 
     override fun getItemCount() = data.size
